@@ -8,30 +8,32 @@ Parameters:
 Mappings:
   RegionMap:
     us-east-1:
-      AMI: ami-1853ac65
+      AMI: ami-03eb6185d756497f8
+      # For the cfn-init to work, Amazon Linux 2023 AMI needs to be intentionally replaced
+      # with older amzn2 AMI (Amazon Linux 2) for default pkg manager yum to work properly
     us-west-1:
-      AMI: ami-bf5540df
+      AMI: ami-0c87a756f3fd22df2
+    us-west-2:
+      AMI: ami-09ac7e749b0a8d2a1
     eu-west-1:
-      AMI: ami-3bfab942
-    ap-southeast-1:
-      AMI: ami-e2adf99e
-    ap-southeast-2:
-      AMI: ami-43874721    
+      AMI: ami-0dab0800aa38826f2
+    eu-central-1:
+      AMI: ami-0fb820135757d28fd
 Resources:
   EC2Instance:
     Type: AWS::EC2::Instance
-    Metadata: 
-      AWS::CloudFormation::Init:
-        config: 
-          packages: 
-            yum:
+    Metadata:
+      AWS::CloudFormation::Init: # This key feeds the metadata needed for
+        config:                  # the Python helper script cfn-init (later in the code)
+          packages:              # that retrieves+interprets the rsrc's metadata,
+            yum:                 # installs pkgs, creates files & starts services
               httpd: []
               php: []
-          files: 
+          files:
             /var/www/html/index.php:
               content: !Sub |
-                <?php print "Hello world Abs was here!"; ?>
-          services: 
+                <?php print "Hello world, this is running on Amazon Linux 2 with YUM."; ?>
+          services:
             sysvinit:
               httpd:
                 enabled: true
@@ -40,19 +42,24 @@ Resources:
       InstanceType: t2.micro
       ImageId:
         Fn::FindInMap:
-        - RegionMap
-        - !Ref AWS::Region
-        - AMI
+          - RegionMap
+          - !Ref AWS::Region
+          - AMI
       SecurityGroupIds:
         - !Ref MySecurityGroup
       Tags:
-        - Key: Name
+        - Key: "Name"
           Value: !Ref NameOfService
+        - Key: "User tagged region"
+          Value: !Join
+            - "-EC2-"
+            - - !Ref AWS::AccountId
+              - !Ref AWS::Region
       KeyName: !Ref KeyName
-      UserData:
-        'Fn::Base64': 
-          !Sub |
-            #!/bin/bash -xe            
+      UserData:               # User data (bootstrap script) must be base64-encoded
+        Fn::Base64:
+          !Sub |              # Intrinsic func. !Sub allows foll. pseudoparams like AWS::StackName
+            #!/bin/bash -xe
             # Ensure AWS CFN Bootstrap is the latest
             yum install -y aws-cfn-bootstrap
             # Install the files and packages from the metadata
@@ -62,15 +69,15 @@ Resources:
     Properties:
       GroupDescription: Open Ports 22 and 80
       SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: '22'
-        ToPort: '22'
-        CidrIp: 0.0.0.0/0
-      - IpProtocol: tcp
-        FromPort: '80'
-        ToPort: '80'
-        CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: "22"
+          ToPort: "22"
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp   # Added another rule to allow ingress at tcp 80
+          FromPort: "80"
+          ToPort: "80"
+          CidrIp: 0.0.0.0/0
 Outputs:
   Website:
     Description: The Public DNS for the EC2 Instance
-    Value: !Sub 'http://${EC2Instance.PublicDnsName}'
+    Value: !Sub "http://${EC2Instance.PublicDnsName}"
