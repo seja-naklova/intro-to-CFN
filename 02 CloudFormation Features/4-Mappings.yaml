@@ -1,32 +1,32 @@
 Mappings:
-  RegionMap:
+  RegionMap:  # MapName with TopLevelKeys(unique) & SecondLevelKey:Value pairs
     us-east-1:
-      AMI: ami-1853ac65
+      AMI: ami-0df435f331839b2d6  # AmazonLinux 2023 AMI in N.Virginia region
     us-west-1:
-      AMI: ami-bf5540df
+      AMI: ami-0c87a756f3fd22df2
+    us-west-2:
+      AMI: ami-09ac7e749b0a8d2a1  # AmazonLinux 2023 AMI in Oregon region
     eu-west-1:
-      AMI: ami-3bfab942
-    ap-southeast-1:
-      AMI: ami-e2adf99e
-    ap-southeast-2:
-      AMI: ami-43874721
+      AMI: ami-0dab0800aa38826f2
+    eu-central-1:
+      AMI: ami-0fb820135757d28fd  # AmazonLinux 2023 AMI in EU Frankfurt region
 Resources:
   Ec2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
       InstanceType: t2.micro
       ImageId:
-        Fn::FindInMap:
+        Fn::FindInMap:  # syntax Fn::FindInMap: [ MapName, TopLevelKey, SecondLevelKey ]
         - RegionMap
-        - !Ref AWS::Region
-        - AMI
+        - !Ref AWS::Region  # passsing a pseudoparam for region as TopLevelKey
+        - AMI # returning the value from the corresponding SecondLevelKey:Value pair
       SecurityGroups: 
         - !Ref MySecurityGroup
       Tags:
         - Key: "Name"
           Value: !Join 
-            - ""
-            - - "EC2 Instance for "
+            - "-EC2-"
+            - - !Ref AWS::AccountId # Pseudo parameters are predefined by Cfn
               - !Ref AWS::Region
   MySecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'

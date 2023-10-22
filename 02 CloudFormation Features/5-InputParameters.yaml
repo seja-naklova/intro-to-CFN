@@ -1,4 +1,4 @@
-Parameters:
+Parameters:   # allows to input custom values at time of creating/updating the stack
   NameOfService:
     Description: "The name of the service this stack is to be used for."
     Type: String
@@ -8,15 +8,15 @@ Parameters:
 Mappings:
   RegionMap:
     us-east-1:
-      AMI: ami-1853ac65
+      AMI: ami-0df435f331839b2d6
     us-west-1:
-      AMI: ami-bf5540df
+      AMI: ami-0c87a756f3fd22df2
+    us-west-2:
+      AMI: ami-09ac7e749b0a8d2a1
     eu-west-1:
-      AMI: ami-3bfab942
-    ap-southeast-1:
-      AMI: ami-e2adf99e
-    ap-southeast-2:
-      AMI: ami-43874721
+      AMI: ami-0dab0800aa38826f2
+    eu-central-1:
+      AMI: ami-0fb820135757d28fd
 Resources:
   Ec2Instance:
     Type: 'AWS::EC2::Instance'
@@ -32,6 +32,11 @@ Resources:
       Tags:
         - Key: "Name"
           Value: !Ref NameOfService
+        - Key: "User tagged region"
+          Value: !Join 
+            - "-EC2-"
+            - - !Ref AWS::AccountId # tag value created using Join & Pseudoparams
+              - !Ref AWS::Region
       KeyName: !Ref KeyName
   MySecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
