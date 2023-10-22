@@ -32,3 +32,5 @@ These files are distributed on an AS IS BASIS, WITHOUT WARRANTIES OR CONDITIONS 
 
 ## Change Log 
 May 2018 initial preparation
+
+### Practising & optimising for free tier in us-east-1 in 2023. ###

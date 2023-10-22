@@ -1,3 +1,5 @@
+# Since EC2 is in a VPC, it doesn't get replaced(terminated & new created)
+# when SG description is modified as per aws cfn docs.
 Parameters:
   NameOfService:
     Description: "The name of the service this stack is to be used for."
@@ -14,30 +16,31 @@ Parameters:
 Mappings:
   RegionMap:
     us-east-1:
-      AMI: ami-1853ac65
+      AMI: ami-03eb6185d756497f8
+      # older amzn2 AMI (Amazon Linux 2)
     us-west-1:
-      AMI: ami-bf5540df
+      AMI: ami-0c87a756f3fd22df2
+    us-west-2:
+      AMI: ami-09ac7e749b0a8d2a1
     eu-west-1:
-      AMI: ami-3bfab942
-    ap-southeast-1:
-      AMI: ami-e2adf99e
-    ap-southeast-2:
-      AMI: ami-43874721    
+      AMI: ami-0dab0800aa38826f2
+    eu-central-1:
+      AMI: ami-0fb820135757d28fd
 Resources:
   EC2Instance:
     Type: AWS::EC2::Instance
-    Metadata: 
-      AWS::CloudFormation::Init:
-        config: 
-          packages: 
-            yum:
+    Metadata:
+      AWS::CloudFormation::Init: # This key feeds the metadata needed for
+        config:                  # the Python helper script cfn-init (later in the code)
+          packages:              # that retrieves+interprets the rsrc's metadata,
+            yum:                 # installs pkgs, creates files & starts services
               httpd: []
               php: []
-          files: 
+          files:
             /var/www/html/index.php:
               content: !Sub |
-                <?php print "Hello world Abs was here!"; ?>
-          services: 
+                <?php print "Hello world, this is running on Amazon Linux 2 with YUM."; ?>
+          services:
             sysvinit:
               httpd:
                 enabled: true
@@ -50,16 +53,21 @@ Resources:
         - !Ref AWS::Region
         - AMI
       SecurityGroupIds:
-        - !Ref MySecurityGroup
+      - !Ref MySecurityGroup
       SubnetId: !Ref SubnetId
       Tags:
-        - Key: Name
-          Value: !Ref NameOfService
+      - Key: "Name"
+        Value: !Ref NameOfService
+      - Key: "User tagged region"
+        Value: !Join
+          - "-EC2-"
+          - - !Ref AWS::AccountId
+            - !Ref AWS::Region
       KeyName: !Ref KeyName
-      UserData:
-        'Fn::Base64': 
-          !Sub |
-            #!/bin/bash -xe            
+      UserData:               # User data (bootstrap script) must be base64-encoded
+        Fn::Base64:
+          !Sub |              # Intrinsic func. !Sub allows foll. pseudoparams like AWS::StackName
+            #!/bin/bash -xe
             # Ensure AWS CFN Bootstrap is the latest
             yum install -y aws-cfn-bootstrap
             # Install the files and packages from the metadata
@@ -77,4 +85,4 @@ Resources:
 Outputs:
   Website:
     Description: The Public DNS for the EC2 Instance
-    Value: !Sub 'http://${EC2Instance.PublicDnsName}'
+    Value: !Sub "http://${EC2Instance.PublicDnsName}"

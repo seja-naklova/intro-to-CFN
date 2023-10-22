@@ -1,3 +1,5 @@
+# This time EC2's type is changed,
+# it should not be replaced as per aws cfn docs.
 Parameters:
   NameOfService:
     Description: "The name of the service this stack is to be used for."
@@ -5,6 +7,12 @@ Parameters:
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access into the server
     Type: AWS::EC2::KeyPair::KeyName
+  VpcId:
+    Description: Enter the VpcId
+    Type: AWS::EC2::VPC::Id
+  SubnetId:
+    Description: Enter the SubnetId
+    Type: AWS::EC2::Subnet::Id
 Mappings:
   RegionMap:
     us-east-1:
@@ -38,7 +46,7 @@ Resources:
                 enabled: true
                 ensureRunning: true
     Properties:
-      InstanceType: t2.micro
+      InstanceType: t2.small
       ImageId:
         Fn::FindInMap:
         - RegionMap
@@ -46,6 +54,7 @@ Resources:
         - AMI
       SecurityGroupIds:
       - !Ref MySecurityGroup
+      SubnetId: !Ref SubnetId
       Tags:
       - Key: "Name"
         Value: !Ref NameOfService
@@ -66,7 +75,8 @@ Resources:
   MySecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Open Ports 22 and 80
+      GroupDescription: Open Port 80 for website
+      VpcId: !Ref VpcId
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: '80'

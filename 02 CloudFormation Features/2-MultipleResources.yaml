@@ -3,9 +3,11 @@ Resources:
     Type: 'AWS::EC2::Instance'
     Properties:
       InstanceType: t2.micro
-      ImageId: ami-43874721 # Amazon Linux AMI in Sydney
+      ImageId: ami-0df435f331839b2d6 # Amazon Linux AMI us-east-1
       Tags:
         - Key: "Name"
+          Value: !Join [ "-", [ a, simple, example ] ]
+        - Key: "Extra info"
           Value: !Join [ " ", [ EC2, Instance, with, Fn, Join ] ]
       SecurityGroups: 
         - !Ref MySecurityGroup

@@ -45,13 +45,13 @@ Resources:
       Port: 80
       Protocol: HTTP
       VpcId: !Ref VpcId
-  AutoScalingGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
+  AutoScalingGroup:                           # ASG properties changed to have min. 6 instances active.
+    Type: AWS::AutoScaling::AutoScalingGroup  # This will use up all the 6 subnets in the us-east-1 AZ.
     Properties:
       AvailabilityZones: !GetAZs
       LaunchConfigurationName: !Ref LaunchConfiguration
-      MinSize: 1
-      MaxSize: 3
+      MinSize: 6
+      MaxSize: 6
       TargetGroupARNs: 
         - !Ref TargetGroup
   LaunchConfiguration:
